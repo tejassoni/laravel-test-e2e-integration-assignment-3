@@ -2,7 +2,7 @@
 
 ## Laravel Dusk End-to-End Browser Testing for Authentication Process Flow Verification
 
-This project focuses on performing end-to-end browser testing for the authentication process in a Laravel application using **Laravel Dusk** with **MySQL** database. It leverages **Laravel Breeze** for the authentication scaffolding, which uses Blade templates and Alpine.js for a robust and user-friendly experience.
+This project focuses on performing end-to-end browser testing for the authentication process in a Laravel application using **Laravel Dusk** with a **MySQL** database. It leverages **Laravel Breeze** for the authentication scaffolding, which uses Blade templates and Alpine.js for a robust and user-friendly experience.
 
 ---
 
@@ -60,8 +60,8 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
 
     This command creates a separate environment file specifically for Dusk tests, preventing conflicts with your main application environment.
 
--   **Edit MySQL `.env.dusk.local`:**
-    Open the newly created `.env.dusk.local` file and configure it as follows:
+-   **Configure MySQL in `.env.dusk.local`:**
+    Open the newly created `.env.dusk.local` file and configure it as follows. Note that `SESSION_DRIVER` should be `file` for session persistence during tests (e.g., for CSRF tokens).
 
     ```ini
     APP_NAME=DuskIntegrationE2ETesting
@@ -78,12 +78,7 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
     DB_USERNAME=root # or your MySQL username
     DB_PASSWORD=123456 # your MySQL password
 
-    SESSION_DRIVER=array
-    CACHE_DRIVER=array
-    QUEUE_CONNECTION=sync
-    MAIL_MAILER=array
-
-    SESSION_DRIVER=array
+    SESSION_DRIVER=file # Crucial for persistent sessions (e.g., CSRF tokens)
     CACHE_DRIVER=array
     QUEUE_CONNECTION=sync
     MAIL_MAILER=array
@@ -95,9 +90,9 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
     ```
 
     **Note:**
-    -   **MySQL Configuration**: If you prefer to use MySQL for your Dusk tests, uncomment the MySQL section and provide your database credentials. Ensure the `test_database_dusk` database exists.
-    -   **`CHROME_PATH`**: Verify and update this path to the correct installation location of Google Chrome on your system.
-    -   **`DUSK_HEADLESS`**: Set this to `false` if you want to see the browser opening and interacting during the tests, which is useful for debugging. For continuous integration or hidden testing, set it to `true`.
+    * **MySQL Configuration**: Ensure the `test_database_dusk` database exists in your MySQL server and that the provided `DB_USERNAME` and `DB_PASSWORD` have the necessary permissions.
+    * **`CHROME_PATH`**: Verify and update this path to the correct installation location of Google Chrome on your system.
+    * **`DUSK_HEADLESS`**: Set this to `false` if you want to see the browser opening and interacting during the tests, which is useful for debugging. For continuous integration or hidden testing, set it to `true`.
 
 -   **Laravel Optimize Clear Once:**
 
@@ -111,7 +106,7 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
 
 ### Running Your Laravel Application and Dusk Tests
 
-To run your application and execute Dusk tests, you'll need two separate terminal instances:
+To run your application and execute Dusk tests, you'll need two or more separate terminal instances:
 
 -   **Run Laravel Server (Terminal 1):**
 
@@ -121,11 +116,18 @@ To run your application and execute Dusk tests, you'll need two separate termina
 
     This will start your Laravel development server, typically on `http://localhost:8000`.
 
--   **Run Laravel Dusk (Terminal 2):**
+-   **Run Laravel Dusk (Terminal 2) for Chrome:**
     ```bash
     php artisan dusk
     ```
-    This command will execute your Dusk browser tests against the running Laravel application.
+    This command will execute your Dusk browser tests against the running Laravel application using ChromeDriver.
+
+-   **Run Laravel Dusk (Terminal 3) for Firefox:**
+    ```bash
+    php artisan dusk --env=dusk.firefox
+    ```
+    This command will execute your Dusk browser tests against the running Laravel application using Firefox.
+    **Note:** To use this, you'll need to create a `config/dusk.php` file and define the `firefox` environment connection, along with a `.env.dusk.firefox` file for specific Firefox driver settings. Refer to Dusk documentation for detailed multi-browser setup.
 
 ---
 
@@ -155,19 +157,21 @@ Laravel Dusk primarily uses ChromeDriver to automate Google Chrome. However, it 
 
 | Browser            | Supported via Custom Driver                                        | Notes                                                                                          |
 | :----------------- | :----------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **Google Chrome**  | ✅ Yes                                                             | Default and most thoroughly supported.                                                         |
-| **Chromium**       | ✅ Yes                                                             | Same setup as Chrome; just change the binary path in `CHROME_PATH`.                            |
-| **Firefox**        | ✅ Yes (via [GeckoDriver](https://github.com/mozilla/geckodriver)) | Works well using Selenium-compatible RemoteWebDriver setup.                                    |
+| **Google Chrome** | ✅ Yes                                                             | Default and most thoroughly supported.                                                         |
+| **Chromium** | ✅ Yes                                                             | Same setup as Chrome; just change the binary path in `CHROME_PATH`.                            |
+| **Firefox** | ✅ Yes (via [GeckoDriver](https://github.com/mozilla/geckodriver)) | Works well using Selenium-compatible RemoteWebDriver setup.                                    |
 | **Microsoft Edge** | ✅ Yes (via EdgeDriver)                                            | Must be manually configured similar to ChromeDriver. Download the correct EdgeDriver version.  |
-| **Safari**         | ⚠️ Limited                                                         | Works only on macOS. Requires enabling Safari's Remote Automation in the Developer menu.       |
-| **Opera**          | ⚠️ Possible                                                        | Requires configuration via Chromium/OperaDriver; not officially recommended or well-supported. |
-| **Brave**          | ✅ Chrome-compatible                                               | Can work by pointing `CHROME_PATH` to Brave's executable binary, as it's Chromium-based.       |
+| **Safari** | ⚠️ Limited                                                         | Works only on macOS. Requires enabling Safari's Remote Automation in the Developer menu.       |
+| **Opera** | ⚠️ Possible                                                        | Requires configuration via Chromium/OperaDriver; not officially recommended or well-supported. |
+| **Brave** | ✅ Chrome-compatible                                               | Can work by pointing `CHROME_PATH` to Brave's executable binary, as it's Chromium-based.       |
 
 ---
 
-### ChromeDriver Verification and Management (Linux Ubuntu Example)
+### Driver Verification and Management (Linux Ubuntu Examples)
 
-Ensuring ChromeDriver is correctly installed and running is crucial for Dusk tests.
+Ensuring your chosen browser driver (e.g., ChromeDriver, GeckoDriver) is correctly installed and running is crucial for Dusk tests.
+
+#### Google Chrome / ChromeDriver
 
 -   **Verify Google Chrome Installation:**
 
@@ -194,14 +198,59 @@ Ensuring ChromeDriver is correctly installed and running is crucial for Dusk tes
     ```
 
 -   **Ensure ChromeDriver is Running:**
-    Laravel Dusk uses ChromeDriver under the hood. You can manage it with:
+    Laravel Dusk can manage ChromeDriver automatically.
     ```bash
     php artisan dusk:chrome-driver # This command downloads and manages the ChromeDriver for you.
     ```
-    Alternatively, you can run it directly:
+    Alternatively, you can run it directly in a separate terminal if needed:
     ```bash
     ./vendor/laravel/dusk/bin/chromedriver-linux # (Or chromedriver-mac, chromedriver-win.exe depending on your OS)
     ```
     When running `php artisan dusk`, Dusk automatically starts and stops the ChromeDriver process unless you have a custom setup.
+
+#### Mozilla Firefox / GeckoDriver
+
+-   **Verify Firefox Installation:**
+    ```bash
+    which firefox        # Example Output: /usr/bin/firefox
+    firefox --version    # Should return: Mozilla Firefox 115.0 or higher
+    ```
+
+-   **Verify GeckoDriver Installation:**
+    ```bash
+    which geckodriver    # Example Output: /usr/local/bin/geckodriver
+    geckodriver --version # Should return: geckodriver 0.34.0 or similar
+    ```
+
+-   **GeckoDriver Installation Steps (if not installed):**
+    ```bash
+    sudo apt install wget tar -y
+
+    # Option 1: Download a specific version
+    wget [https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz](https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz)
+    tar -xvzf geckodriver-*.tar.gz
+    sudo mv geckodriver /usr/local/bin/
+    sudo chmod +x /usr/local/bin/geckodriver
+
+    # Option 2: Download the latest version dynamically
+    # GECKODRIVER_VERSION=$(curl -s [https://api.github.com/repos/mozilla/geckodriver/releases/latest](https://api.github.com/repos/mozilla/geckodriver/releases/latest) | grep tag_name | cut -d '"' -f 4)
+    # wget "[https://github.com/mozilla/geckodriver/releases/download/$](https://github.com/mozilla/geckodriver/releases/download/$){GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
+    # tar -xvzf "geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
+    # sudo mv geckodriver /usr/local/bin/
+    # geckodriver --version
+    ```
+
+-   **Install Required Libraries for Firefox:**
+    ```bash
+    sudo apt install -y libgtk-3-0t64 libx11-xcb1 libdbus-glib-1-2 libxt6t64 libxcomposite1 libxdamage1 libxrandr2 libasound2t64
+    sudo apt install -y libcanberra-gtk-module libcanberra-gtk3-module
+    ```
+
+-   **Start GeckoDriver (for custom setups or debugging):**
+    You might need to start GeckoDriver manually in a separate terminal if Dusk isn't configured to manage it automatically for Firefox:
+    ```bash
+    geckodriver --port 4444 --log debug
+    ```
+    Ensure this port (e.g., 4444) matches the `DUSK_DRIVER_URL` configured for your Firefox Dusk environment.
 
 ---
