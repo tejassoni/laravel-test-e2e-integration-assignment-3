@@ -60,11 +60,10 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
 
     This command creates a separate environment file specifically for Dusk tests, preventing conflicts with your main application environment.
 
--   **Configure MySQL in `.env.dusk.local`:**
+-   **Configure MySQL in `.env.dusk.local` (Chrome Default):**
     Open the newly created `.env.dusk.local` file and configure it as follows. Note that `SESSION_DRIVER` should be `file` for session persistence during tests (e.g., for CSRF tokens).
 
-        ```ini
-
+    ```ini
     APP_NAME=DuskIntegrationE2ETesting
     APP_ENV=dusk.local
     APP_KEY=base64:fUUR4u1gv1UOnUWmc1KvBbrdc/Y5Uv6IDDDIAZRixNQ=
@@ -79,18 +78,19 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
     DB_USERNAME=root # or your MySQL username
     DB_PASSWORD=123456 # your MySQL password
 
-    SESSION_DRIVER=array
+    SESSION_DRIVER=file # Crucial for persistent sessions (e.g., CSRF tokens)
     CACHE_DRIVER=array
     QUEUE_CONNECTION=sync
     MAIL_MAILER=array
 
-    # ChromeDriver Specific Configurations
-    DUSK_DRIVER_URL=http://localhost:9515
-    DUSK_FIREFOX_DRIVER_URL=http://localhost:4444
-    DUSK_BROWSER=chrome # can be: chrome OR firefox
+    # Browser & Driver Configurations
+    DUSK_DRIVER_URL=http://localhost:9515 # ChromeDriver default port
+    DUSK_FIREFOX_DRIVER_URL=http://localhost:4444 # GeckoDriver default port
+    DUSK_BROWSER=chrome # Default browser for `php artisan dusk`
     CHROME_PATH=/usr/bin/google-chrome # Replace with your Google Chrome browser path
     FIREFOX_PATH=/usr/bin/firefox # Replace with your FireFox browser path
     DUSK_HEADLESS=false # Set to `false` for real-time browser interaction during tests; `true` for hidden background testing.
+    ```
 
 -   **Create `.env.dusk.firefox`:**
 
@@ -98,13 +98,12 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
     cp .env .env.dusk.firefox
     ```
 
-    This command creates a separate environment file specifically for Dusk tests, preventing conflicts with your firefox application environment.
+    This command creates a separate environment file specifically for Dusk tests when running with Firefox.
 
--   **Configure MySQL in `.env.dusk.firefox`:**
-    Open the newly created `.env.dusk.firefox` file and configure it as follows. Note that `SESSION_DRIVER` should be `file` for session persistence during tests (e.g., for CSRF tokens).
+-   **Configure MySQL in `.env.dusk.firefox` (Firefox Specific):**
+    Open the newly created `.env.dusk.firefox` file and configure it as follows. Ensure `SESSION_DRIVER` is `file` for session persistence.
 
     ```ini
-
     APP_NAME=DuskIntegrationE2ETesting
     APP_ENV=dusk.local
     APP_KEY=base64:fUUR4u1gv1UOnUWmc1KvBbrdc/Y5Uv6IDDDIAZRixNQ=
@@ -119,20 +118,20 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
     DB_USERNAME=root # or your MySQL username
     DB_PASSWORD=123456 # your MySQL password
 
-    SESSION_DRIVER=array
+    SESSION_DRIVER=file # Crucial for persistent sessions (e.g., CSRF tokens)
     CACHE_DRIVER=array
     QUEUE_CONNECTION=sync
     MAIL_MAILER=array
 
-    # ChromeDriver Specific Configurations
-    DUSK_DRIVER_URL=http://localhost:4444
-    DUSK_BROWSER=firefox # can be: chrome OR firefox
-    FIREFOX_PATH=/usr/bin/firefox # Replace with your FireFox browser path
+    # Browser & Driver Configurations for Firefox
+    DUSK_DRIVER_URL=http://localhost:4444 # GeckoDriver port for Firefox
+    DUSK_BROWSER=firefox # Explicitly set browser to firefox for this environment
+    FIREFOX_PATH=/usr/bin/firefox # Replace with your Firefox browser path
     DUSK_HEADLESS=false # Set to `false` for real-time browser interaction during tests; `true` for hidden background testing.
-```
-    **Note:**
+    ```
+    **Note for both `.env.dusk.local` and `.env.dusk.firefox`:**
     * **MySQL Configuration**: Ensure the `test_database_dusk` database exists in your MySQL server and that the provided `DB_USERNAME` and `DB_PASSWORD` have the necessary permissions.
-    * **`CHROME_PATH`**: Verify and update this path to the correct installation location of Google Chrome on your system.
+    * **Browser Paths**: Verify and update `CHROME_PATH` and `FIREFOX_PATH` to the correct installation locations of your browsers on your system.
     * **`DUSK_HEADLESS`**: Set this to `false` if you want to see the browser opening and interacting during the tests, which is useful for debugging. For continuous integration or hidden testing, set it to `true`.
 
 -   **Laravel Optimize Clear Once:**
@@ -163,14 +162,14 @@ To run your application and execute Dusk tests, you'll need two or more separate
     php artisan dusk
     ```
 
-    This command will execute your Dusk browser tests against the running Laravel application using ChromeDriver.
+    This command will execute your Dusk browser tests against the running Laravel application using ChromeDriver (as configured in `.env.dusk.local`).
 
 -   **Run Laravel Dusk (Terminal 3) for Firefox:**
     ```bash
     php artisan dusk --env=dusk.firefox
     ```
-    This command will execute your Dusk browser tests against the running Laravel application using Firefox.
-    **Note:** To use this, you'll need to create a `config/dusk.php` file and define the `firefox` environment connection, along with a `.env.dusk.firefox` file for specific Firefox driver settings. Refer to Dusk documentation for detailed multi-browser setup.
+    This command will execute your Dusk browser tests against the running Laravel application using Firefox (as configured in `.env.dusk.firefox`).
+    **Note:** To run tests with Firefox, you will also need to configure Dusk to use a custom driver for Firefox. This typically involves modifying `config/dusk.php` to define the 'firefox' connection and ensure GeckoDriver is running.
 
 ---
 
@@ -198,15 +197,15 @@ This project utilizes Laravel Breeze for authentication, providing a robust and 
 
 Laravel Dusk primarily uses ChromeDriver to automate Google Chrome. However, it can be configured to work with other browsers via custom drivers.
 
-| Browser            | Supported via Custom Driver                                        | Notes                                                                                          |
-| :----------------- | :----------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **Google Chrome**  | ✅ Yes                                                             | Default and most thoroughly supported.                                                         |
-| **Chromium**       | ✅ Yes                                                             | Same setup as Chrome; just change the binary path in `CHROME_PATH`.                            |
-| **Firefox**        | ✅ Yes (via [GeckoDriver](https://github.com/mozilla/geckodriver)) | Works well using Selenium-compatible RemoteWebDriver setup.                                    |
-| **Microsoft Edge** | ✅ Yes (via EdgeDriver)                                            | Must be manually configured similar to ChromeDriver. Download the correct EdgeDriver version.  |
-| **Safari**         | ⚠️ Limited                                                         | Works only on macOS. Requires enabling Safari's Remote Automation in the Developer menu.       |
-| **Opera**          | ⚠️ Possible                                                        | Requires configuration via Chromium/OperaDriver; not officially recommended or well-supported. |
-| **Brave**          | ✅ Chrome-compatible                                               | Can work by pointing `CHROME_PATH` to Brave's executable binary, as it's Chromium-based.       |
+| Browser            | Supported via Custom Driver                                        | Notes                                                                                              |
+| :----------------- | :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| **Google Chrome** | ✅ Yes                                                             | Default and most thoroughly supported.                                                             |
+| **Chromium** | ✅ Yes                                                             | Same setup as Chrome; just change the binary path in `CHROME_PATH`.                                |
+| **Firefox** | ✅ Yes (via [GeckoDriver](https://github.com/mozilla/geckodriver)) | Works well using Selenium-compatible RemoteWebDriver setup.                                        |
+| **Microsoft Edge** | ✅ Yes (via EdgeDriver)                                            | Must be manually configured similar to ChromeDriver. Download the correct EdgeDriver version.      |
+| **Safari** | ⚠️ Limited                                                         | Works only on macOS. Requires enabling Safari's Remote Automation in the Developer menu.           |
+| **Opera** | ⚠️ Possible                                                        | Requires configuration via Chromium/OperaDriver; not officially recommended or well-supported.     |
+| **Brave** | ✅ Chrome-compatible                                               | Can work by pointing `CHROME_PATH` to Brave's executable binary, as it's Chromium-based.           |
 
 ---
 
@@ -279,11 +278,11 @@ Ensuring your chosen browser driver (e.g., ChromeDriver, GeckoDriver) is correct
     sudo chmod +x /usr/local/bin/geckodriver
 
     # Option 2: Download the latest version dynamically
-    # GECKODRIVER_VERSION=$(curl -s [https://api.github.com/repos/mozilla/geckodriver/releases/latest](https://api.github.com/repos/mozilla/geckodriver/releases/latest) | grep tag_name | cut -d '"' -f 4)
-    # wget "[https://github.com/mozilla/geckodriver/releases/download/$](https://github.com/mozilla/geckodriver/releases/download/$){GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
-    # tar -xvzf "geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
-    # sudo mv geckodriver /usr/local/bin/
-    # geckodriver --version
+    GECKODRIVER_VERSION=$(curl -s [https://api.github.com/repos/mozilla/geckodriver/releases/latest](https://api.github.com/repos/mozilla/geckodriver/releases/latest) | grep tag_name | cut -d '"' -f 4)
+    wget "[https://github.com/mozilla/geckodriver/releases/download/$](https://github.com/mozilla/geckodriver/releases/download/$){GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
+    tar -xvzf "geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"
+    sudo mv geckodriver /usr/local/bin/
+    geckodriver --version
     ```
 
 -   **Install Required Libraries for Firefox:**
