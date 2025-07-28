@@ -148,28 +148,43 @@ Laravel Dusk is a powerful browser automation testing tool. Here's how to set it
 
 To run your application and execute Dusk tests, you'll need two or more separate terminal instances:
 
--   **Run Laravel Server (Terminal 1):**
+-   **Start GeckoDriver (for custom setups or debugging):**
+    You might need to start GeckoDriver manually in a separate terminal if Dusk isn't configured to manage it automatically for Firefox:
+    ```bash
+    geckodriver --port 4444 --log debug
+    ```
+
+-   **Run Laravel Server (Terminal 1): for firefox**
 
     ```bash
-    php artisan serve
+    php artisan serve --env=dusk.firefox
     ```
 
     This will start your Laravel development server, typically on `http://localhost:8000`.
 
--   **Run Laravel Dusk (Terminal 2) for Chrome:**
+-   **Run Laravel Dusk (Terminal 2) for firefox:**
 
-    ```bash
-    php artisan dusk
-    ```
-
-    This command will execute your Dusk browser tests against the running Laravel application using ChromeDriver (as configured in `.env.dusk.local`).
-
--   **Run Laravel Dusk (Terminal 3) for Firefox:**
     ```bash
     php artisan dusk --env=dusk.firefox
     ```
     This command will execute your Dusk browser tests against the running Laravel application using Firefox (as configured in `.env.dusk.firefox`).
     **Note:** To run tests with Firefox, you will also need to configure Dusk to use a custom driver for Firefox. This typically involves modifying `config/dusk.php` to define the 'firefox' connection and ensure GeckoDriver is running.
+
+-   **Run Laravel Server (Terminal 3): for chrome**
+
+    ```bash
+    php artisan serve --env=dusk.local
+    ```
+
+    This will start your Laravel development server, typically on `http://localhost:8000`.
+
+-   **Run Laravel Dusk (Terminal 4) for chrome:**
+
+    ```bash
+    php artisan dusk --env=dusk.local
+    ```
+
+    This command will execute your Dusk browser tests against the running Laravel application using ChromeDriver (as configured in `.env.dusk.local`).
 
 ---
 
